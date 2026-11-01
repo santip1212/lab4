@@ -1,0 +1,88 @@
+name: 'C++ CI'
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - feature/github_actions
+  pull_request:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  build-ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Run demo
+        run: ./build/lab4 all
+
+      - name: Upload Ubuntu artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ubuntu-binary
+          path: build/lab4
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Run demo
+        run: .\build\Release\lab4.exe all
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-binary
+          path: build/Release/lab4.exe
+
+  create-release:
+    needs: [build-ubuntu, build-windows]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Rename binaries with version
+        run: |
+          # Переименовываем lab4 в lab4-1.0.НомерСборки-Linux
+          mv ./artifacts/ubuntu-binary/lab4 ./artifacts/ubuntu-binary/lab4-1.0.${{ github.run_number }}-Linux
+          mv ./artifacts/windows-binary/lab4.exe ./artifacts/windows-binary/lab4-1.0.${{ github.run_number }}-Windows.exe
+          chmod +x ./artifacts/ubuntu-binary/lab4-1.0.${{ github.run_number }}-Linux
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Release v1.0.${{ github.run_number }}
+          draft: false
+          prerelease: false
+          files: |
+            ./artifacts/ubuntu-binary/lab4-1.0.${{ github.run_number }}-Linux
+            ./artifacts/windows-binary/lab4-1.0.${{ github.run_number }}-Windows.exe
