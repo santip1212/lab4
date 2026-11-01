@@ -19,7 +19,7 @@ public:
     };
 
     // Определяю тип аллокатора для Node через rebind (
-    using NodeAlloc = typename std::allocator_traits<Alloc>::rebind_alloc<Node>;
+    using NodeAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<Node>;
     using NodeAllocTraits = std::allocator_traits<NodeAlloc>;
 
     MyForwardList() : m_head(nullptr), m_size(0), m_alloc() {}
