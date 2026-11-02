@@ -1,6 +1,7 @@
 #include <iostream>
 #include <map>
 #include <functional>
+#include <memory_resource>
 #include "PoolAllocator.h"
 #include "MyForwardList.h"
 
@@ -15,21 +16,31 @@ int factorial(int n) {
 
 int main() {
     // 1) создание экземпляра std::map<int, int>
-    std::map<int, int> map1;
-
+    std::pmr::unsynchronized_pool_resource pool;
+    std::pmr::map<int, int> map_pmr{&pool};
     // 2) заполнение 10 элементами (ключ 0-9, значение - факториал)
-    for (int i = 0; i < 10; ++i) { map1[i] = factorial(i); }
+    for (int i = 0; i < 10; ++i) { map_pmr[i] = factorial(i); }
+    
 
-    // 3) создание экземпляра std::map с новым аллокатором, ограниченным 10 элементами
-    using MapPoolAlloc = PoolAllocator<std::pair<const int, int>, 10>;
-    std::map<int, int, std::less<int>, MapPoolAlloc> map2;
-
-    // 4) заполнение 10 элементами
-    for (int i = 0; i < 10; ++i) { map2[i] = factorial(i); }
+    std::pmr::monotonic_buffer_resource mono_res;
+    std::pmr::map<int, int> map_pmr2{&mono_res};
+    for (int i = 0; i < 10; ++i) { 
+        map_pmr2[i] = factorial(i); 
+    }
 
     // 5) вывод на экран всех значений (ключ и значение разделены пробелом)
-    for (const auto& pair : map2) { std::cout << pair.first << " " << pair.second << std::endl; }
+    for (const auto& pair : map_pmr) { std::cout << pair.first << " " << pair.second << std::endl; }
 
+    using MapPoolAlloc = PoolAllocator<std::pair<const int, int>, 10>;
+    std::map<int, int, std::less<int>, MapPoolAlloc> map_custom;
+    
+    for (int i = 0; i < 10; ++i) { 
+        map_custom[i] = factorial(i); 
+    }
+    
+    for (const auto& pair : map_custom) { 
+        std::cout << pair.first << " " << pair.second << std::endl; 
+    }
     // 6) создание экземпляра своего контейнера для хранения значений типа int
     MyForwardList<int> my_list1;
 
