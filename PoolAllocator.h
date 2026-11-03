@@ -11,7 +11,7 @@ template <typename T, std::size_t BlockSize = 10> // выделение 10 яч�
 class PoolAllocator {
 public:
     using value_type = T; // одно из требования к сущ аллок
-
+    using is_always_equal = std::true_type;
     template <typename U>
     struct rebind {
         using other = PoolAllocator<U, BlockSize>;
@@ -112,16 +112,5 @@ public:
     // Метод освобождения памяти
     void deallocate(T* p, std::size_t n) {
         pool_->deallocate(p, n);
-    }
-
-    // Операторы сравнения нужны для контейнеров STL 
-    template <typename U>
-    bool operator==(const PoolAllocator<U, BlockSize>& other) const noexcept {
-        return pool_ == other.pool_;
-    }
-
-    template <typename U>
-    bool operator!=(const PoolAllocator<U, BlockSize>& other) const noexcept {
-        return !(*this == other);
     }
 };

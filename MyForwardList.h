@@ -4,7 +4,6 @@
 #include <stdexcept>
 #include <utility>
 #include <algorithm>
-#include <memory> // Для std::allocator_traits
 
 // Добавил шаблонный параметр Alloc по умолчанию std::allocator<T>
 template<typename T, typename Alloc = std::allocator<T>>
